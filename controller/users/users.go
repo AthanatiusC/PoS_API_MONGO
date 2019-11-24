@@ -29,10 +29,14 @@ func CreateUser(res http.ResponseWriter, req *http.Request) {
 
 	user.Password = string(password)
 
+	if len(user.Username) == 0{
+		util.ReturnRes(res, nil)
+		return
+	}
+
 	// query := "insert into users values ('','" + user.Name + "','" + user.Username + "','" + string(password) + "','" + user.Role + "')"
 	collection := db.Database("LSP").Collection("users")
 	collection.InsertOne(context.TODO(), user)
-
 	db.Disconnect(context.TODO())
 	util.ReturnRes(res, user.Name)
 }
@@ -52,6 +56,7 @@ func GetUser(res http.ResponseWriter, req *http.Request) {
 	util.OnErr(err)
 	err = collection.FindOne(context.TODO(), bson.M{"_id":objid}).Decode(&users)
 	util.OnErr(err)
+
 	db.Disconnect(context.TODO())
 	util.ReturnRes(res, users)
 }
@@ -78,12 +83,14 @@ func GetAllUser(res http.ResponseWriter, req *http.Request) {
 
 func DeleteUser(res http.ResponseWriter, req *http.Request) {
 	raw_param := mux.Vars(req)
-	uname := raw_param["username"]
+	id := raw_param["id"]
+	objid,err:=primitive.ObjectIDFromHex(id)
+
 	db, err := util.ConnectMongo()
 	util.OnErr(err)
 
 	collection := db.Database("LSP").Collection("users")
-	deleteResult, err := collection.DeleteOne(context.TODO(), bson.M{"username": uname})
+	deleteResult, err := collection.DeleteOne(context.TODO(), bson.M{"_id": objid})
 	util.OnErr(err)
 	db.Disconnect(context.TODO())
 
@@ -97,6 +104,10 @@ func UpdateUser(res http.ResponseWriter, req *http.Request) {
 	err := json.NewDecoder(req.Body).Decode(&user)
 	db, err := util.ConnectMongo()
 	util.OnErr(err)
+	if len(user.Username) == 0{
+		util.ReturnRes(res, nil)
+		return
+	}
 	password, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	user.Password = string(password)
 	collection := db.Database("LSP").Collection("users")
@@ -116,18 +127,36 @@ func Auth(res http.ResponseWriter, req *http.Request) {
 	db, err := util.ConnectMongo()
 	util.OnErr(err)
 	collection := db.Database("LSP").Collection("users")
-	err = collection.FindOne(context.TODO(), model.Users{Username: user.Username}).Decode(&userauth)
+	err = collection.FindOne(context.TODO(), bson.M{"username":user.Username}).Decode(&userauth)
 	util.OnErr(err)
 	
-	password, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
-	err = bcrypt.CompareHashAndPassword([]byte(userauth.Password), password)
-	db.Disconnect(context.TODO())
+	// password:= hashAndSalt()
+	ismatch := comparePasswords(userauth.Password,[]byte(user.Password))
 
-	if err != nil {
-		util.ReturnRes(res, userauth)
-	} else {
-		util.ReturnRes(res, nil)
+	db.Disconnect(context.TODO())
+	if ismatch == true{
+		util.ReturnRes(res,userauth)
+	}else{
+		util.ReturnRes(res,nil)
 	}
+}
+
+
+func hashAndSalt(pwd []byte) string {
+    hash, err := bcrypt.GenerateFromPassword(pwd, bcrypt.DefaultCost)
+    if err != nil {
+        log.Println(err)
+    }
+    return string(hash)
+}
+
+func comparePasswords(hashedPwd string, plainPwd []byte) bool {    // Since we'll be getting the hashed password from the DB it
+	byteHash := []byte(hashedPwd)    
+	err := bcrypt.CompareHashAndPassword(byteHash, plainPwd)
+    if err != nil {
+        return false
+    }
+	return true
 }
 
 

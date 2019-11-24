@@ -11,6 +11,7 @@ import(
 
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
+	"github.com/segmentio/ksuid"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -19,8 +20,14 @@ func CreateProduct(res http.ResponseWriter,req *http.Request){
 	var product model.Products
 	err:=json.NewDecoder(req.Body).Decode(&product)
 	util.OnErr(err)
-	db,err:=util.ConnectMongo()
+	if len(product.Curr) == 0{
+		util.ReturnRes(res,nil)
+		return
+	}
+db,err:=util.ConnectMongo()
 	util.OnErr(err)
+	id := ksuid.New()
+	product.Barcode = id.String()
 
 	collection:=db.Database("LSP").Collection("products")
 	collection.InsertOne(context.TODO(),product)
@@ -46,6 +53,7 @@ func GetProduct(res http.ResponseWriter,req *http.Request){
 	collection.FindOne(context.TODO(),bson.M{"_id":objid}).Decode(&product)
 	
 	db.Disconnect(context.TODO())
+
 	util.ReturnRes(res,product)
 }
 
@@ -76,6 +84,11 @@ func UpdateProduct(res http.ResponseWriter,req *http.Request){
 	util.OnErr(err)
 	db,err:=util.ConnectMongo()
 	util.OnErr(err)
+
+	if len(product.Curr) == 0{
+		util.ReturnRes(res,nil)
+		return
+	}
 
 	collection:=db.Database("LSP").Collection("products")
 	data:=bson.D{{Key:"$set",Value:product}}

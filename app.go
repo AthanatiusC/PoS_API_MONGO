@@ -5,7 +5,15 @@ import (
 	controller_customers "LSP/controller/customers"
 	controller_orders "LSP/controller/orders"
 	controller_products "LSP/controller/products"
+	controller_profile "LSP/controller/profile"
 	controller_users "LSP/controller/users"
+	controller_role "LSP/controller/role"
+	controller_unit "LSP/controller/unit"
+	controller_category "LSP/controller/category"
+	controller_currency "LSP/controller/currency"
+	controller_minstock "LSP/controller/minstock"
+	controller_transaction "LSP/controller/transaction"
+	"github.com/rs/cors"
 	"LSP/util"
 	"context"
 	"log"
@@ -26,20 +34,24 @@ func main() {
 	}()
 
 	router := mux.NewRouter()
+	// c := cors.New(cors.Options{
+		// AllowedOrigins: []string{"http://localhost:4200"},
+	// })
+
 	go router.HandleFunc("/", Home).Methods("GET")
 
 	go router.HandleFunc("/users", controller_users.GetAllUser).Methods("GET")
 	go router.HandleFunc("/users", controller_users.CreateUser).Methods("POST")
 	go router.HandleFunc("/users/{id}", controller_users.GetUser).Methods("GET")
 	go router.HandleFunc("/users/{username}", controller_users.UpdateUser).Methods("PUT")
-	go router.HandleFunc("/users/{username}", controller_users.DeleteUser).Methods("DELETE")
+	go router.HandleFunc("/users/delete/{id}", controller_users.DeleteUser).Methods("GET")
 	go router.HandleFunc("/users/auth", controller_users.Auth).Methods("POST")
 
 	go router.HandleFunc("/products", controller_products.CreateProduct).Methods("POST")
 	go router.HandleFunc("/products", controller_products.GetAllProduct).Methods("GET")
 	go router.HandleFunc("/products/{id}", controller_products.GetProduct).Methods("GET")
-	go router.HandleFunc("/products/{id}", controller_products.UpdateProduct).Methods("PUT")
-	go router.HandleFunc("/products/{id}", controller_products.DeleteProduct).Methods("DELETE")
+	go router.HandleFunc("/products/{id}", controller_products.UpdateProduct).Methods("POST")
+	go router.HandleFunc("/products/delete/{id}", controller_products.DeleteProduct).Methods("GET")
 
 	go router.HandleFunc("/orders", controller_orders.GetAllOrders).Methods("GET")
 	go router.HandleFunc("/orders", controller_orders.CreateOrders).Methods("POST")
@@ -51,15 +63,47 @@ func main() {
 	go router.HandleFunc("/carts", controller_carts.GetAllCarts).Methods("GET")
 	go router.HandleFunc("/carts/{id}", controller_carts.GetCarts).Methods("GET")
 	go router.HandleFunc("/carts/{id}", controller_carts.UpdateCarts).Methods("PUT")
-	go router.HandleFunc("/carts/{id}", controller_carts.DeleteCarts).Methods("DELETE")
+	go router.HandleFunc("/carts/delete/{id}", controller_carts.DeleteCarts).Methods("GET")
+	go router.HandleFunc("/carts/today/", controller_carts.GetCartsToday).Methods("GET")
+	go router.HandleFunc("/export", controller_carts.Export).Methods("GET")
 
-	router.HandleFunc("/customers", controller_customers.CreateCustomers).Methods("POST")
-	router.HandleFunc("/customers", controller_customers.GetAllCustomers).Methods("GET")
-	router.HandleFunc("/customers/{id}", controller_customers.GetCustomers).Methods("GET")
-	router.HandleFunc("/customers/{id}", controller_customers.UpdateCustomers).Methods("PUT")
-	router.HandleFunc("/customers/{id}", controller_customers.DeleteCustomers).Methods("DELETE")
 
-	log.Fatal(http.ListenAndServe("localhost:3030", router))
+	go router.HandleFunc("/customers", controller_customers.CreateCustomers).Methods("POST")
+	go router.HandleFunc("/customers", controller_customers.GetAllCustomers).Methods("GET")
+	go router.HandleFunc("/customers/{id}", controller_customers.GetCustomers).Methods("GET")
+	go router.HandleFunc("/customers/{id}", controller_customers.UpdateCustomers).Methods("PUT")
+	go router.HandleFunc("/customers/delete/{id}", controller_customers.DeleteCustomers).Methods("GET")
+
+	go router.HandleFunc("/roles", controller_role.GetAllRole).Methods("GET")
+	go router.HandleFunc("/roles", controller_role.CreateRole).Methods("POST")
+	go router.HandleFunc("/roles/{id}", controller_role.GetRole).Methods("GET")
+	go router.HandleFunc("/roles/delete/{id}", controller_role.DeleteRole).Methods("GET")
+
+	go router.HandleFunc("/currency", controller_currency.GetAllCurrency).Methods("GET")
+	go router.HandleFunc("/currency", controller_currency.CreateCurrency).Methods("POST")
+	go router.HandleFunc("/currency/delete/{id}", controller_currency.DeleteCurrency).Methods("GET")
+
+	go router.HandleFunc("/minstock", controller_minstock.GetAllCurrency).Methods("GET")
+	go router.HandleFunc("/minstock", controller_minstock.CreateCurrency).Methods("POST")
+	go router.HandleFunc("/minstock/delete/{id}", controller_minstock.DeleteCurrency).Methods("GET")
+
+	go router.HandleFunc("/category", controller_category.GetAllCategory).Methods("GET")
+	go router.HandleFunc("/category", controller_category.CreateCategory).Methods("POST")
+	go router.HandleFunc("/category/delete/{id}", controller_category.DeleteCategory).Methods("GET")
+	
+	go router.HandleFunc("/unit", controller_unit.GetAllUnit).Methods("GET")
+	go router.HandleFunc("/unit", controller_unit.CreateUnit).Methods("POST")
+	go router.HandleFunc("/unit/delete/{id}", controller_unit.DeleteUnit).Methods("GET")
+
+	go router.HandleFunc("/profile", controller_profile.GetProfile).Methods("GET")
+	go router.HandleFunc("/profile", controller_profile.UpdateProfile).Methods("POST")
+	go router.HandleFunc("/profile", controller_profile.UpdateProfile).Methods("PUT")
+
+	go router.HandleFunc("/transaction", controller_transaction.CreateTransaction).Methods("POST")
+	go router.HandleFunc("/transaction", controller_transaction.GetAllTransaction).Methods("GET")
+	
+	handler := cors.Default().Handler(router)
+	log.Fatal(http.ListenAndServe("localhost:3030", handler))
 }
 
 //Home Display Category:Default

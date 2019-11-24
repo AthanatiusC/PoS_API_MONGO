@@ -25,9 +25,9 @@ func ConnectMongo() (client *mongo.Client,err error) {
 
 func ReturnRes(res http.ResponseWriter, value interface{}) {
 	res.Header().Set("Access-Control-Allow-Origin", "*")
-	res.Header().Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE")
-	res.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	res.Header().Set("Content-Type", "application/json")
+    res.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+    res.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+    res.Header().Set("Content-Type", "Application/json")
 	json.NewEncoder(res).Encode(value)
 }
 
